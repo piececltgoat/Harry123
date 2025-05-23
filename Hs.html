@@ -2,34 +2,67 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Head Soccer</title>
+  <title>Head Soccer - One Player</title>
   <style>
-    body { margin: 0; overflow: hidden; background: #77b5fe; }
-    canvas { display: block; margin: auto; background: #65c466; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #77b5fe; overflow: hidden; }
+    canvas { background: #65c466; display: block; margin: auto; }
   </style>
 </head>
 <body>
 <canvas id="gameCanvas" width="800" height="400"></canvas>
 
 <script>
-  const canvas = document.getElementById('gameCanvas');
-  const ctx = canvas.getContext('2d');
+  const canvas = document.getElementById("gameCanvas");
+  const ctx = canvas.getContext("2d");
 
-  const player1 = { x: 100, y: 300, w: 50, h: 50, color: 'red', vy: 0 };
-  const player2 = { x: 650, y: 300, w: 50, h: 50, color: 'blue', vy: 0 };
-  const ball = { x: 400, y: 200, r: 15, vx: 4, vy: 3, color: 'white' };
+  const ground = 360;
 
-  const gravity = 0.5;
-  const floor = 350;
+  const player = {
+    x: 100,
+    y: ground,
+    vx: 0,
+    vy: 0,
+    w: 40,
+    h: 80,
+    color: "red",
+    onGround: true
+  };
+
+  const ai = {
+    x: 650,
+    y: ground,
+    vx: 0,
+    vy: 0,
+    w: 40,
+    h: 80,
+    color: "blue",
+    onGround: true
+  };
+
+  const ball = {
+    x: 400,
+    y: 200,
+    r: 15,
+    vx: 4,
+    vy: 3,
+    color: "white"
+  };
+
+  const gravity = 0.6;
+  const friction = 0.9;
   const keys = {};
 
-  document.addEventListener('keydown', e => keys[e.key] = true);
-  document.addEventListener('keyup', e => keys[e.key] = false);
+  document.addEventListener("keydown", e => keys[e.key] = true);
+  document.addEventListener("keyup", e => keys[e.key] = false);
 
-  function drawPlayer(p) {
+  function drawCharacter(p) {
+    // Body
     ctx.fillStyle = p.color;
+    ctx.fillRect(p.x, p.y - p.h, p.w, p.h - 20);
+    // Head
     ctx.beginPath();
-    ctx.arc(p.x + p.w / 2, p.y + p.h / 2, p.w / 2, 0, Math.PI * 2);
+    ctx.arc(p.x + p.w / 2, p.y - p.h, 20, 0, Math.PI * 2);
     ctx.fill();
   }
 
@@ -40,41 +73,112 @@
     ctx.fill();
   }
 
-  function updatePlayer(p, upKey, downKey) {
-    if (keys[upKey] && p.y > 0) p.y -= 5;
-    if (keys[downKey] && p.y + p.h < floor) p.y += 5;
+  function updatePlayer() {
+    if (keys["ArrowLeft"]) player.vx = -5;
+    else if (keys["ArrowRight"]) player.vx = 5;
+    else player.vx *= friction;
+
+    if (keys["ArrowUp"] && player.onGround) {
+      player.vy = -12;
+      player.onGround = false;
+    }
+
+    player.vy += gravity;
+    player.x += player.vx;
+    player.y += player.vy;
+
+    // Ground collision
+    if (player.y >= ground) {
+      player.y = ground;
+      player.vy = 0;
+      player.onGround = true;
+    }
+
+    // Wall bounds
+    if (player.x < 0) player.x = 0;
+    if (player.x + player.w > canvas.width) player.x = canvas.width - player.w;
+  }
+
+  function updateAI() {
+    if (ball.x < ai.x) ai.vx = -2;
+    else ai.vx = 2;
+
+    ai.x += ai.vx;
+    ai.vy += gravity;
+    ai.y += ai.vy;
+
+    if (ai.y >= ground) {
+      ai.y = ground;
+      ai.vy = 0;
+      ai.onGround = true;
+    }
+
+    // Wall bounds
+    if (ai.x < 0) ai.x = 0;
+    if (ai.x + ai.w > canvas.width) ai.x = canvas.width - ai.w;
   }
 
   function updateBall() {
     ball.x += ball.vx;
     ball.y += ball.vy;
 
-    // Bounce off top and bottom
-    if (ball.y - ball.r < 0 || ball.y + ball.r > floor) ball.vy *= -1;
-    // Bounce off sides
+    // Wall and ground bounce
+    if (ball.y + ball.r > ground) {
+      ball.y = ground - ball.r;
+      ball.vy *= -0.7;
+    }
+    if (ball.y - ball.r < 0) ball.vy *= -1;
     if (ball.x - ball.r < 0 || ball.x + ball.r > canvas.width) ball.vx *= -1;
 
+    ball.vy += gravity * 0.5;
+
     // Collision with players
-    [player1, player2].forEach(p => {
+    [player, ai].forEach(p => {
       const dx = ball.x - (p.x + p.w / 2);
-      const dy = ball.y - (p.y + p.h / 2);
+      const dy = ball.y - (p.y - p.h / 2);
       const distance = Math.sqrt(dx * dx + dy * dy);
-      if (distance < ball.r + p.w / 2) {
-        ball.vx *= -1;
-        ball.vy *= -1;
+      if (distance < ball.r + 30) {
+        ball.vx = dx * 0.2;
+        ball.vy = dy * 0.2;
       }
     });
+  }
+
+  function drawGoals() {
+    ctx.fillStyle = "yellow";
+    ctx.fillRect(0, ground - 60, 20, 60);
+    ctx.fillRect(canvas.width - 20, ground - 60, 20, 60);
+  }
+
+  function checkGoal() {
+    if (ball.x - ball.r < 20 && ball.y > ground - 60) {
+      alert("AI Scores!");
+      resetBall();
+    }
+    if (ball.x + ball.r > canvas.width - 20 && ball.y > ground - 60) {
+      alert("You Score!");
+      resetBall();
+    }
+  }
+
+  function resetBall() {
+    ball.x = 400;
+    ball.y = 200;
+    ball.vx = Math.random() > 0.5 ? 4 : -4;
+    ball.vy = 3;
   }
 
   function gameLoop() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    updatePlayer(player1, 'w', 's');
-    updatePlayer(player2, 'ArrowUp', 'ArrowDown');
+    updatePlayer();
+    updateAI();
     updateBall();
+    checkGoal();
 
-    drawPlayer(player1);
-    drawPlayer(player2);
+    drawGoals();
+    drawCharacter(player);
+    drawCharacter(ai);
     drawBall();
 
     requestAnimationFrame(gameLoop);
