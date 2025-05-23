@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>2D Football Game with Scoring</title>
+  <title>2D Football Game with Goals and Nets</title>
   <style>
     body {
       margin: 0;
@@ -67,18 +67,50 @@
       height: 25px;
       background: #007bff;
       border: 2px solid white;
+      z-index: 2;
     }
     .opponent {
       width: 25px;
       height: 25px;
       background: #dc3545;
       border: 2px solid white;
+      z-index: 2;
     }
     .ball {
       width: 18px;
       height: 18px;
       background: radial-gradient(circle at 30% 30%, white 40%, black 70%);
       border: 1.5px solid black;
+      z-index: 2;
+    }
+
+    .goal {
+      position: absolute;
+      top: 180px;
+      width: 10px;
+      height: 140px;
+      background: white;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .left-goal {
+      left: 0;
+    }
+    .right-goal {
+      right: 0;
+    }
+    .net {
+      width: 20px;
+      height: 140px;
+      background: repeating-linear-gradient(
+        45deg,
+        rgba(255,255,255,0.6),
+        rgba(255,255,255,0.6) 4px,
+        transparent 4px,
+        transparent 8px
+      );
     }
   </style>
 </head>
@@ -89,13 +121,21 @@
     <div class="center-circle"></div>
     <div class="center-spot"></div>
 
+    <!-- Goals -->
+    <div class="goal left-goal">
+      <div class="net"></div>
+    </div>
+    <div class="goal right-goal">
+      <div class="net"></div>
+    </div>
+
+    <!-- Players and ball -->
     <div class="player" id="player"></div>
     <div class="opponent" id="opponent"></div>
     <div class="ball" id="ball"></div>
   </div>
 
   <script>
-    const field = document.getElementById("field");
     const player = document.getElementById("player");
     const opponent = document.getElementById("opponent");
     const ball = document.getElementById("ball");
@@ -152,22 +192,19 @@
       ballPos.x += ballVelocity.x;
       ballPos.y += ballVelocity.y;
 
-      // Wall bounce
       if (ballPos.y < 0 || ballPos.y > fieldHeight - 18) {
         ballVelocity.y *= -1;
         ballPos.y = Math.max(0, Math.min(ballPos.y, fieldHeight - 18));
       }
 
-      // Goal detection
-      if (ballPos.x <= 0) {
+      if (ballPos.x <= 0 && ballPos.y >= 180 && ballPos.y <= 320) {
         opponentScore++;
         resetPositions();
-      } else if (ballPos.x >= fieldWidth - 18) {
+      } else if (ballPos.x >= fieldWidth - 18 && ballPos.y >= 180 && ballPos.y <= 320) {
         playerScore++;
         resetPositions();
       }
 
-      // Friction
       ballVelocity.x *= ballFriction;
       ballVelocity.y *= ballFriction;
 
