@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>2D Football Field</title>
+<style>
+  body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background: #2a5d2a; /* grass green */
+    margin: 0;
+  }
+  .field {
+    position: relative;
+    width: 800px;
+    height: 500px;
+    background: #4CAF50; /* lighter grass */
+    border: 5px solid white;
+    box-sizing: border-box;
+    border-radius: 15px;
+  }
+  /* Center line */
+  .center-line {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 2px;
+    height: 100%;
+    background: white;
+    transform: translateX(-50%);
+  }
+  /* Center circle */
+  .center-circle {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 120px;
+    height: 120px;
+    border: 3px solid white;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+  }
+  /* Center spot */
+  .center-spot {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 8px;
+    height: 8px;
+    background: white;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+  }
+  /* Penalty areas */
+  .penalty-area {
+    position: absolute;
+    top: 50%;
+    width: 140px;
+    height: 220px;
+    margin-top: -110px;
+    border: 3px solid white;
+    border-radius: 0 30px 30px 0;
+  }
+  .penalty-area.left {
+    left: 0;
+    border-radius: 30px 0 0 30px;
+  }
+  .penalty-area.right {
+    right: 0;
+  }
+  /* Goals */
+  .goal {
+    position: absolute;
+    top: 50%;
+    width: 20px;
+    height: 100px;
+    margin-top: -50px;
+    border: 3px solid white;
+    background: #222;
+  }
+  .goal.left {
+    left: -23px;
+    border-radius: 10px 0 0 10px;
+  }
+  .goal.right {
+    right: -23px;
+    border-radius: 0 10px 10px 0;
+  }
+  /* Corner arcs */
+  .corner-arc {
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    border: 3px solid white;
+    border-radius: 50%;
+  }
+  .corner-arc.top-left {
+    top: 0;
+    left: 0;
+    border-right: none;
+    border-bottom: none;
+  }
+  .corner-arc.top-right {
+    top: 0;
+    right: 0;
+    border-left: none;
+    border-bottom: none;
+  }
+  .corner-arc.bottom-left {
+    bottom: 0;
+    left: 0;
+    border-top: none;
+    border-right: none;
+  }
+  .corner-arc.bottom-right {
+    bottom: 0;
+    right: 0;
+    border-top: none;
+    border-left: none;
+  }
+</style>
+</head>
+<body>
+
+<div class="field">
+  <div class="center-line"></div>
+  <div class="center-circle"></div>
+  <div class="center-spot"></div>
+  
+  <div class="penalty-area left"></div>
+  <div class="penalty-area right"></div>
+  
+  <div class="goal left"></div>
+  <div class="goal right"></div>
+  
+  <div class="corner-arc top-left"></div>
+  <div class="corner-arc top-right"></div>
+  <div class="corner-arc bottom-left"></div>
+  <div class="corner-arc bottom-right"></div>
+</div>
+
+</body>
+</html>
