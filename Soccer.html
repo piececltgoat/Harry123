@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Playable 2D Football Game</title>
+<style>
+  body {
+    margin: 0;
+    background: #2a5d2a;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+  }
+  .field {
+    position: relative;
+    width: 800px;
+    height: 500px;
+    background: #4CAF50;
+    border: 5px solid white;
+    border-radius: 15px;
+    overflow: hidden;
+  }
+  .center-line, .center-circle, .center-spot,
+  .penalty-area, .goal, .corner-arc {
+    pointer-events: none;
+  }
+  .center-line {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 2px;
+    height: 100%;
+    background: white;
+    transform: translateX(-50%);
+  }
+  .center-circle {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 120px;
+    height: 120px;
+    border: 3px solid white;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+  }
+  .center-spot {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 8px;
+    height: 8px;
+    background: white;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+  }
+  .player, .ball {
+    position: absolute;
+    border-radius: 50%;
+  }
+  .player {
+    width: 25px;
+    height: 25px;
+    background: #007bff;
+    border: 2px solid white;
+  }
+  .ball {
+    width: 18px;
+    height: 18px;
+    background: radial-gradient(circle at 30% 30%, white 40%, black 70%);
+    border: 1.5px solid black;
+  }
+</style>
+</head>
+<body>
+<div class="field" id="field">
+  <div class="center-line"></div>
+  <div class="center-circle"></div>
+  <div class="center-spot"></div>
+
+  <!-- Player and ball -->
+  <div class="player" id="player" style="top: 250px; left: 100px;"></div>
+  <div class="ball" id="ball" style="top: 250px; left: 390px;"></div>
+</div>
+
+<script>
+const field = document.getElementById("field");
+const player = document.getElementById("player");
+const ball = document.getElementById("ball");
+
+let playerPos = { x: 100, y: 250 };
+let ballPos = { x: 390, y: 250 };
+let ballVelocity = { x: 0, y: 0 };
+const speed = 4;
+const ballFriction = 0.95;
+
+const keys = {};
+document.addEventListener("keydown", (e) => keys[e.key] = true);
+document.addEventListener("keyup", (e) => keys[e.key] = false);
+
+function movePlayer() {
+  if (keys["ArrowUp"] || keys["w"]) playerPos.y -= speed;
+  if (keys["ArrowDown"] || keys["s"]) playerPos.y += speed;
+  if (keys["ArrowLeft"] || keys["a"]) playerPos.x -= speed;
+  if (keys["ArrowRight"] || keys["d"]) playerPos.x += speed;
+
+  // Keep player inside field
+  playerPos.x = Math.max(0, Math.min(playerPos.x, 800 - 25));
+  playerPos.y = Math.max(0, Math.min(playerPos.y, 500 - 25));
+
+  player.style.left = playerPos.x + "px";
+  player.style.top = playerPos.y + "px";
+}
+
+function updateBall() {
+  ballPos.x += ballVelocity.x;
+  ballPos.y += ballVelocity.y;
+
+  // Ball bounce off walls
+  if (ballPos.x < 0 || ballPos.x > 800 - 18) {
+    ballVelocity.x *= -1;
+    ballPos.x = Math.max(0, Math.min(ballPos.x, 800 - 18));
+  }
+  if (ballPos.y < 0 || ballPos.y > 500 - 18) {
+    ballVelocity.y *= -1;
+    ballPos.y = Math.max(0, Math.min(ballPos.y, 500 - 18));
+  }
+
+  // Slow down
+  ballVelocity.x *= ballFriction;
+  ballVelocity.y *= ballFriction;
+
+  ball.style.left = ballPos.x + "px";
+  ball.style.top = ballPos.y + "px";
+}
+
+function checkCollision() {
+  const dx = (playerPos.x + 12.5) - (ballPos.x + 9);
+  const dy = (playerPos.y + 12.5) - (ballPos.y + 9);
+  const distance = Math.sqrt(dx * dx + dy * dy);
+
+  if (distance < 20) {
+    // Push ball away
+    const angle = Math.atan2(dy, dx);
+    ballVelocity.x = -Math.cos(angle) * 4;
+    ballVelocity.y = -Math.sin(angle) * 4;
+  }
+}
+
+function gameLoop() {
+  movePlayer();
+  updateBall();
+  checkCollision();
+  requestAnimationFrame(gameLoop);
+}
+
+gameLoop();
+</script>
+</body>
+</html>
