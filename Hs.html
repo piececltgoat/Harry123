@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Head Soccer</title>
+  <style>
+    body { margin: 0; overflow: hidden; background: #77b5fe; }
+    canvas { display: block; margin: auto; background: #65c466; }
+  </style>
+</head>
+<body>
+<canvas id="gameCanvas" width="800" height="400"></canvas>
+
+<script>
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+
+  const player1 = { x: 100, y: 300, w: 50, h: 50, color: 'red', vy: 0 };
+  const player2 = { x: 650, y: 300, w: 50, h: 50, color: 'blue', vy: 0 };
+  const ball = { x: 400, y: 200, r: 15, vx: 4, vy: 3, color: 'white' };
+
+  const gravity = 0.5;
+  const floor = 350;
+  const keys = {};
+
+  document.addEventListener('keydown', e => keys[e.key] = true);
+  document.addEventListener('keyup', e => keys[e.key] = false);
+
+  function drawPlayer(p) {
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    ctx.arc(p.x + p.w / 2, p.y + p.h / 2, p.w / 2, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function drawBall() {
+    ctx.fillStyle = ball.color;
+    ctx.beginPath();
+    ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function updatePlayer(p, upKey, downKey) {
+    if (keys[upKey] && p.y > 0) p.y -= 5;
+    if (keys[downKey] && p.y + p.h < floor) p.y += 5;
+  }
+
+  function updateBall() {
+    ball.x += ball.vx;
+    ball.y += ball.vy;
+
+    // Bounce off top and bottom
+    if (ball.y - ball.r < 0 || ball.y + ball.r > floor) ball.vy *= -1;
+    // Bounce off sides
+    if (ball.x - ball.r < 0 || ball.x + ball.r > canvas.width) ball.vx *= -1;
+
+    // Collision with players
+    [player1, player2].forEach(p => {
+      const dx = ball.x - (p.x + p.w / 2);
+      const dy = ball.y - (p.y + p.h / 2);
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      if (distance < ball.r + p.w / 2) {
+        ball.vx *= -1;
+        ball.vy *= -1;
+      }
+    });
+  }
+
+  function gameLoop() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    updatePlayer(player1, 'w', 's');
+    updatePlayer(player2, 'ArrowUp', 'ArrowDown');
+    updateBall();
+
+    drawPlayer(player1);
+    drawPlayer(player2);
+    drawBall();
+
+    requestAnimationFrame(gameLoop);
+  }
+
+  gameLoop();
+</script>
+</body>
+</html>
