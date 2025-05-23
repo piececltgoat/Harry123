@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>2D Rocket League</title>
+  <title>Rocket League Solo</title>
   <style>
     body { margin: 0; background: #000; overflow: hidden; }
     canvas { display: block; margin: 0 auto; background: #222; }
@@ -18,145 +18,144 @@ const ctx = canvas.getContext("2d");
 const WIDTH = canvas.width;
 const HEIGHT = canvas.height;
 const gravity = 0.5;
+const friction = 0.9;
 
-// Game Objects
-const carWidth = 60, carHeight = 30;
-const ballRadius = 15;
+// Load car image
+const carImg = new Image();
+carImg.src = "https://upload.wikimedia.org/wikipedia/commons/thumb/6/64/Cute_car_top_view.svg/1200px-Cute_car_top_view.svg.png"; // Placeholder
 
-const player1 = {
-  x: 100, y: HEIGHT - carHeight,
-  vx: 0, vy: 0,
-  color: "red",
-  keys: { left: "a", right: "d", jump: "w" },
+// Game objects
+const car = {
+  x: 100,
+  y: HEIGHT - 60,
+  width: 80,
+  height: 40,
+  vx: 0,
+  vy: 0,
+  speed: 5,
   onGround: false
 };
 
-const player2 = {
-  x: 850, y: HEIGHT - carHeight,
-  vx: 0, vy: 0,
-  color: "blue",
-  keys: { left: "ArrowLeft", right: "ArrowRight", jump: "ArrowUp" },
-  onGround: false
-};
-
-let ball = {
+const ball = {
   x: WIDTH / 2,
   y: HEIGHT / 2,
-  vx: Math.random() > 0.5 ? 4 : -4,
+  radius: 20,
+  vx: 4,
   vy: -4
 };
 
+const goal = {
+  width: 40,
+  height: 120,
+  x: WIDTH - 40,
+  y: HEIGHT - 120
+};
+
+let score = 0;
 let keys = {};
-let score = { red: 0, blue: 0 };
 
-// Key handling
-window.addEventListener("keydown", (e) => keys[e.key] = true);
-window.addEventListener("keyup", (e) => keys[e.key] = false);
+// Controls
+window.addEventListener("keydown", e => keys[e.key] = true);
+window.addEventListener("keyup", e => keys[e.key] = false);
 
-// Update physics
-function updatePlayer(player) {
-  // Horizontal movement
-  if (keys[player.keys.left]) player.x -= 5;
-  if (keys[player.keys.right]) player.x += 5;
-
-  // Jump
-  if (keys[player.keys.jump] && player.onGround) {
-    player.vy = -10;
-    player.onGround = false;
-  }
-
-  // Gravity
-  player.vy += gravity;
-  player.y += player.vy;
-
-  // Ground collision
-  if (player.y + carHeight >= HEIGHT) {
-    player.y = HEIGHT - carHeight;
-    player.vy = 0;
-    player.onGround = true;
-  }
+// Game loop
+function gameLoop() {
+  update();
+  draw();
+  requestAnimationFrame(gameLoop);
 }
 
-function updateBall() {
+function update() {
+  // Car movement
+  if (keys["ArrowLeft"]) car.vx = -car.speed;
+  if (keys["ArrowRight"]) car.vx = car.speed;
+  if (!keys["ArrowLeft"] && !keys["ArrowRight"]) car.vx *= friction;
+
+  if (keys["ArrowUp"] && car.onGround) {
+    car.vy = -10;
+    car.onGround = false;
+  }
+
+  car.vy += gravity;
+  car.x += car.vx;
+  car.y += car.vy;
+
+  // Ground collision
+  if (car.y + car.height > HEIGHT) {
+    car.y = HEIGHT - car.height;
+    car.vy = 0;
+    car.onGround = true;
+  }
+
+  // Wall collision
+  if (car.x < 0) car.x = 0;
+  if (car.x + car.width > WIDTH) car.x = WIDTH - car.width;
+
+  // Ball physics
   ball.x += ball.vx;
   ball.y += ball.vy;
   ball.vy += gravity;
 
-  // Bounce off floor/ceiling
-  if (ball.y + ballRadius > HEIGHT) {
-    ball.y = HEIGHT - ballRadius;
+  if (ball.y + ball.radius > HEIGHT) {
+    ball.y = HEIGHT - ball.radius;
     ball.vy *= -0.9;
   }
-  if (ball.y - ballRadius < 0) {
-    ball.y = ballRadius;
-    ball.vy *= -1;
+  if (ball.x - ball.radius < 0 || ball.x + ball.radius > WIDTH) {
+    ball.vx *= -1;
   }
 
-  // Bounce off walls
-  if (ball.x - ballRadius < 0) {
-    score.blue++;
-    resetBall();
-  } else if (ball.x + ballRadius > WIDTH) {
-    score.red++;
-    resetBall();
+  // Ball collision with car
+  const dx = (car.x + car.width / 2) - ball.x;
+  const dy = (car.y + car.height / 2) - ball.y;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+
+  if (dist < car.width / 2 + ball.radius) {
+    ball.vx = -ball.vx;
+    ball.vy = -7;
   }
 
-  // Collide with cars
-  [player1, player2].forEach(player => {
-    const px = player.x + carWidth / 2;
-    const py = player.y + carHeight / 2;
-    const dx = ball.x - px;
-    const dy = ball.y - py;
-    const dist = Math.sqrt(dx * dx + dy * dy);
-    if (dist < ballRadius + carWidth / 2) {
-      ball.vx *= -1;
-      ball.vy = -7;
-    }
-  });
+  // Goal scoring
+  if (
+    ball.x + ball.radius > goal.x &&
+    ball.y + ball.radius > goal.y &&
+    ball.y - ball.radius < goal.y + goal.height
+  ) {
+    score++;
+    resetBall();
+  }
 }
 
 function resetBall() {
-  ball = {
-    x: WIDTH / 2,
-    y: HEIGHT / 2,
-    vx: Math.random() > 0.5 ? 4 : -4,
-    vy: -4
-  };
+  ball.x = WIDTH / 2;
+  ball.y = HEIGHT / 2;
+  ball.vx = Math.random() > 0.5 ? 4 : -4;
+  ball.vy = -4;
 }
 
-// Drawing
-function drawPlayer(player) {
-  ctx.fillStyle = player.color;
-  ctx.fillRect(player.x, player.y, carWidth, carHeight);
-}
-
-function drawBall() {
-  ctx.fillStyle = "#fff";
-  ctx.beginPath();
-  ctx.arc(ball.x, ball.y, ballRadius, 0, Math.PI * 2);
-  ctx.fill();
-}
-
-function drawScore() {
-  ctx.fillStyle = "white";
-  ctx.font = "24px Arial";
-  ctx.fillText(`Red: ${score.red}  Blue: ${score.blue}`, WIDTH / 2 - 80, 30);
-}
-
-// Game loop
-function gameLoop() {
+function draw() {
   ctx.clearRect(0, 0, WIDTH, HEIGHT);
 
-  updatePlayer(player1);
-  updatePlayer(player2);
-  updateBall();
+  // Draw ground
+  ctx.fillStyle = "#333";
+  ctx.fillRect(0, HEIGHT - 10, WIDTH, 10);
 
-  drawPlayer(player1);
-  drawPlayer(player2);
-  drawBall();
-  drawScore();
+  // Draw goal
+  ctx.fillStyle = "yellow";
+  ctx.fillRect(goal.x, goal.y, goal.width, goal.height);
 
-  requestAnimationFrame(gameLoop);
+  // Draw car
+  ctx.drawImage(carImg, car.x, car.y, car.width, car.height);
+
+  // Draw ball
+  ctx.beginPath();
+  ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+  ctx.fillStyle = "white";
+  ctx.fill();
+
+  // Draw score
+  ctx.fillStyle = "white";
+  ctx.font = "24px Arial";
+  ctx.fillText("Score: " + score, 20, 30);
 }
 
 gameLoop();
